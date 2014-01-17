@@ -1,6 +1,7 @@
 package fr.tvbarthel.monalisaapp;
 
 import android.hardware.Camera;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
@@ -27,30 +28,7 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
-        mCamera = getCameraInstance();
-
-        if (mCamera == null) {
-            this.finish();
-        }
-
-        mFaceDetectionPreview = new FaceDetectionPreview(this, mCamera);
-        mPreview = (FrameLayout) findViewById(R.id.container);
-
-        mPreview.addView(mFaceDetectionPreview);
-
-        mCamera.setFaceDetectionListener(new Camera.FaceDetectionListener() {
-            @Override
-            public void onFaceDetection(Camera.Face[] faces, Camera camera) {
-                if (faces.length > 0) {
-                    Log.d("FaceDetection", "face detected: " + faces.length +
-                            " Face 1 Location X: " + faces[0].rect.centerX() +
-                            "Y: " + faces[0].rect.centerY());
-                }
-            }
-        });
-
-        setCameraDisplayOrientation(mCamera);
+        new CameraAsyncTask().execute();
     }
 
 
@@ -83,6 +61,7 @@ public class MainActivity extends ActionBarActivity {
 
     /**
      * used to adapt camera preview to the current device orientation
+     *
      * @param camera
      */
     public void setCameraDisplayOrientation(android.hardware.Camera camera) {
@@ -132,8 +111,8 @@ public class MainActivity extends ActionBarActivity {
     /**
      * remove the preview
      */
-    private void releasePreview(){
-        if(mFaceDetectionPreview != null){
+    private void releasePreview() {
+        if (mFaceDetectionPreview != null) {
             mPreview.removeView(mFaceDetectionPreview);
             mFaceDetectionPreview = null;
         }
@@ -148,6 +127,43 @@ public class MainActivity extends ActionBarActivity {
             mCamera = null;
             FrameLayout preview = (FrameLayout) findViewById(R.id.container);
             preview.removeView(mFaceDetectionPreview);
+        }
+    }
+
+    private class CameraAsyncTask extends AsyncTask<Void, Void, Camera> {
+
+        @Override
+        protected Camera doInBackground(Void... params) {
+            return getCameraInstance();
+        }
+
+        @Override
+        protected void onPostExecute(Camera camera) {
+            super.onPostExecute(camera);
+
+            mCamera = camera;
+
+            if (mCamera == null) {
+                MainActivity.this.finish();
+            }
+
+            mFaceDetectionPreview = new FaceDetectionPreview(MainActivity.this, mCamera);
+            mPreview = (FrameLayout) findViewById(R.id.container);
+
+            mPreview.addView(mFaceDetectionPreview);
+
+            mCamera.setFaceDetectionListener(new Camera.FaceDetectionListener() {
+                @Override
+                public void onFaceDetection(Camera.Face[] faces, Camera camera) {
+                    if (faces.length > 0) {
+                        Log.d("FaceDetection", "face detected: " + faces.length +
+                                " Face 1 Location X: " + faces[0].rect.centerX() +
+                                "Y: " + faces[0].rect.centerY());
+                    }
+                }
+            });
+
+            setCameraDisplayOrientation(mCamera);
         }
     }
 }
