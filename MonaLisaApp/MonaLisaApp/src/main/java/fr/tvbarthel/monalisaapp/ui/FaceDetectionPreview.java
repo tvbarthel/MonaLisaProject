@@ -1,4 +1,4 @@
-package fr.tvbarthel.monalisaapp;
+package fr.tvbarthel.monalisaapp.ui;
 
 import android.content.Context;
 import android.hardware.Camera;

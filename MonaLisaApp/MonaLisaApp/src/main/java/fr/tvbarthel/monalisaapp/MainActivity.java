@@ -5,24 +5,40 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Surface;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
+
+import fr.tvbarthel.monalisaapp.ui.DynamicEyeView;
+import fr.tvbarthel.monalisaapp.ui.FaceDetectionPreview;
 
 public class MainActivity extends ActionBarActivity {
 
     private static final String TAG = MainActivity.class.getName();
     private Camera mCamera;
     private FaceDetectionPreview mFaceDetectionPreview;
+    private ImageView mPortrait;
+    private FrameLayout.LayoutParams mPortraitParams;
     private FrameLayout mPreview;
+    private DynamicEyeView mEye;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mPortrait = new ImageView(this);
+        mPortrait.setImageDrawable(getResources().getDrawable(R.drawable.mona_lisa));
+        mPortraitParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        mPortraitParams.gravity = Gravity.CENTER;
+
+        mEye = new DynamicEyeView(this);
     }
 
     @Override
@@ -114,8 +130,9 @@ public class MainActivity extends ActionBarActivity {
     private void releasePreview() {
         if (mFaceDetectionPreview != null) {
             mPreview.removeView(mFaceDetectionPreview);
-            mFaceDetectionPreview = null;
         }
+        mPreview.removeView(mPortrait);
+        mPreview.removeView(mEye);
     }
 
     /**
@@ -151,6 +168,8 @@ public class MainActivity extends ActionBarActivity {
             mPreview = (FrameLayout) findViewById(R.id.container);
 
             mPreview.addView(mFaceDetectionPreview);
+            mPreview.addView(mPortrait,mPortraitParams);
+            mPreview.addView(mEye);
 
             mCamera.setFaceDetectionListener(new Camera.FaceDetectionListener() {
                 @Override
@@ -160,6 +179,8 @@ public class MainActivity extends ActionBarActivity {
                                 " Face 1 Location X: " + faces[0].rect.centerX() +
                                 "Y: " + faces[0].rect.centerY());
                     }
+
+                    mEye.invalidate();
                 }
             });
 
