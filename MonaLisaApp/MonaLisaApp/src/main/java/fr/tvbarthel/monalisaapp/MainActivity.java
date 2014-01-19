@@ -12,9 +12,8 @@ import android.view.Surface;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 
-import fr.tvbarthel.monalisaapp.ui.DynamicEyeView;
+import fr.tvbarthel.monalisaapp.ui.DynamicPortrait;
 import fr.tvbarthel.monalisaapp.ui.FaceDetectionPreview;
 
 public class MainActivity extends ActionBarActivity {
@@ -22,10 +21,11 @@ public class MainActivity extends ActionBarActivity {
     private static final String TAG = MainActivity.class.getName();
     private Camera mCamera;
     private FaceDetectionPreview mFaceDetectionPreview;
-    private ImageView mPortrait;
+    private DynamicPortrait mPortrait;
     private FrameLayout.LayoutParams mPortraitParams;
     private FrameLayout mPreview;
-    private DynamicEyeView mEye;
+    private Eye mLeftEye;
+    private Eye mRightEye;
 
 
     @Override
@@ -33,12 +33,13 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mPortrait = new ImageView(this);
-        mPortrait.setImageDrawable(getResources().getDrawable(R.drawable.mona_lisa));
+        mPortrait = new DynamicPortrait(this, getResources().getDrawable(R.drawable.mona_lisa));
         mPortraitParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         mPortraitParams.gravity = Gravity.CENTER;
 
-        mEye = new DynamicEyeView(this);
+        mLeftEye = new Eye(0.36f, 0.28f, 10f);
+        mRightEye = new Eye(0.50f, 0.28f, 10f);
+        mPortrait.setEyesModel(mLeftEye,mRightEye);
     }
 
     @Override
@@ -132,7 +133,6 @@ public class MainActivity extends ActionBarActivity {
             mPreview.removeView(mFaceDetectionPreview);
         }
         mPreview.removeView(mPortrait);
-        mPreview.removeView(mEye);
     }
 
     /**
@@ -168,19 +168,20 @@ public class MainActivity extends ActionBarActivity {
             mPreview = (FrameLayout) findViewById(R.id.container);
 
             mPreview.addView(mFaceDetectionPreview);
-            mPreview.addView(mPortrait,mPortraitParams);
-            mPreview.addView(mEye);
+            mPreview.addView(mPortrait, mPortraitParams);
 
             mCamera.setFaceDetectionListener(new Camera.FaceDetectionListener() {
                 @Override
                 public void onFaceDetection(Camera.Face[] faces, Camera camera) {
                     if (faces.length > 0) {
+                        float relativeY = -((float) faces[0].rect.centerX()) / ((float) mFaceDetectionPreview.getMeasuredWidth());
+                        float relativeX = -((float) faces[0].rect.centerY()) / ((float) mFaceDetectionPreview.getMeasuredHeight()/2);
                         Log.d("FaceDetection", "face detected: " + faces.length +
-                                " Face 1 Location X: " + faces[0].rect.centerX() +
-                                "Y: " + faces[0].rect.centerY());
+                                " Face 1 Location X: " + relativeX + "Y: " + relativeY);
+                        mLeftEye.addOrientation(relativeX,relativeY);
+                        mRightEye.addOrientation(relativeX,relativeY);
                     }
-
-                    mEye.invalidate();
+                    mPortrait.invalidate();
                 }
             });
 
